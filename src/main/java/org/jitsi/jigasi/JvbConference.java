@@ -18,9 +18,6 @@
 package org.jitsi.jigasi;
 
 import net.java.sip.communicator.impl.protocol.jabber.*;
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.*;
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jitsimeet.*;
-import net.java.sip.communicator.impl.protocol.sip.*;
 import net.java.sip.communicator.service.protocol.*;
 import net.java.sip.communicator.service.protocol.event.*;
 import net.java.sip.communicator.service.protocol.jabber.*;
@@ -29,11 +26,12 @@ import net.java.sip.communicator.util.Logger;
 import net.java.sip.communicator.util.*;
 import org.jitsi.jigasi.stats.*;
 import org.jitsi.jigasi.util.*;
-import org.jitsi.jigasi.xmpp.*;
+import org.jitsi.xmpp.extensions.jibri.*;
+import org.jitsi.xmpp.extensions.jitsimeet.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.service.neomedia.*;
-import org.jitsi.util.*;
-import org.jivesoftware.smack.SmackException.*;
+import org.jitsi.utils.*;
+import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.packet.*;
 import org.jivesoftware.smackx.nick.packet.*;
 import org.jxmpp.jid.*;
@@ -650,14 +648,10 @@ public class JvbConference
 
             ChatRoom mucRoom = muc.findRoom(roomName);
 
-            if (mucRoom.getMembersCount() == 0)
-            {
-                logger.info("No focus in the room, let's invite it!");
-                // we do an invite and do not wait for response, as we will
-                // start ringing and will be invited when another participant
-                // joins
-                inviteFocus(JidCreate.entityBareFrom(mucRoom.getIdentifier()));
-            }
+            // we invite focus and wait for its response
+            // to be sure that if it is not in the room, the focus will be the
+            // first to join, mimic the web behaviour
+            inviteFocus(JidCreate.entityBareFrom(mucRoom.getIdentifier()));
 
             Localpart resourceIdentifier = getResourceIdentifier();
 
@@ -1298,7 +1292,8 @@ public class JvbConference
             return;
         }
 
-        ConferenceIq focusInviteIQ = new ConferenceIq(roomIdentifier);
+        ConferenceIq focusInviteIQ = new ConferenceIq();
+        focusInviteIQ.setRoom(roomIdentifier);
 
         // FIXME: uses hardcoded values that are currently used in production
         // we need to configure them or retrieve them in the future
@@ -1323,15 +1318,27 @@ public class JvbConference
         // this check just skips an exception when running tests
         if (xmppProvider instanceof ProtocolProviderServiceJabberImpl)
         {
+            StanzaCollector collector = null;
             try
             {
-                ((ProtocolProviderServiceJabberImpl) xmppProvider)
-                    .getConnection().sendStanza(focusInviteIQ);
+                collector = ((ProtocolProviderServiceJabberImpl) xmppProvider)
+                    .getConnection()
+                    .createStanzaCollectorAndSend(focusInviteIQ);
+                collector.nextResultOrThrow();
             }
-            catch (NotConnectedException | InterruptedException e)
+            catch (SmackException
+                | XMPPException.XMPPErrorException
+                | InterruptedException e)
             {
                 logger.error(
                     "Could not invite the focus to the conference", e);
+            }
+            finally
+            {
+                if (collector != null)
+                {
+                    collector.cancel();
+                }
             }
         }
     }

@@ -29,7 +29,7 @@ import org.eclipse.jetty.server.*;
 import org.osgi.framework.*;
 import org.json.simple.*;
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.colibri.*;
+import org.jitsi.xmpp.extensions.colibri.*;
 import net.java.sip.communicator.service.protocol.*;
 import net.java.sip.communicator.service.protocol.jabber.*;
 import net.java.sip.communicator.util.*;
@@ -331,7 +331,8 @@ public class Statistics
     {
         if (ProtocolNames.JABBER.equals(pps.getProtocolName())
             && pps.getAccountID() instanceof JabberAccountID
-            && !((JabberAccountID)pps.getAccountID()).isAnonymousAuthUsed())
+            && !((JabberAccountID)pps.getAccountID()).isAnonymousAuthUsed()
+            && pps.isRegistered())
         {
             try
             {

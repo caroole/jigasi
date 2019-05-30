@@ -17,7 +17,6 @@
  */
 package org.jitsi.jigasi;
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.*;
 import net.java.sip.communicator.service.protocol.*;
 import net.java.sip.communicator.service.protocol.event.*;
 import net.java.sip.communicator.service.protocol.media.*;
@@ -25,7 +24,8 @@ import net.java.sip.communicator.util.Logger;
 import org.jitsi.jigasi.stats.*;
 import org.jitsi.jigasi.util.*;
 import org.jitsi.service.neomedia.*;
-import org.jitsi.util.*;
+import org.jitsi.xmpp.extensions.jibri.*;
+import org.jitsi.utils.*;
 import org.jivesoftware.smack.packet.*;
 
 import java.text.*;
@@ -443,7 +443,8 @@ public class SipGatewaySession
                 // lets add cs to outgoing call
                 if (statsHandler == null)
                 {
-                    statsHandler = new StatsHandler(DEFAULT_STATS_REMOTE_ID);
+                    statsHandler = new StatsHandler(
+                        DEFAULT_STATS_REMOTE_ID + "-" + destination);
                 }
                 call.addCallChangeListener(statsHandler);
 
@@ -551,7 +552,8 @@ public class SipGatewaySession
         // lets add cs to incoming call
         if (statsHandler == null)
         {
-            statsHandler = new StatsHandler(DEFAULT_STATS_REMOTE_ID);
+            statsHandler = new StatsHandler(
+                DEFAULT_STATS_REMOTE_ID + "-" + this.getMucDisplayName());
         }
         call.addCallChangeListener(statsHandler);
 
